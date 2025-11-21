@@ -79,7 +79,7 @@ def get_retriever(urls):
 with st.sidebar:
     st.header("Knowledge Base")
     for u in DEFAULT_URLS: st.write(f"✓ {u}")
-    extra = st.text_area("Add more URLs (optional)", height=100)
+    extra = st.text_area("Add more URLs (optional). One URL per line.", height=100)
     extra_urls = [l.strip() for l in extra.split("\n") if l.strip()]
     all_urls = DEFAULT_URLS + extra_urls
 
