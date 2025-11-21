@@ -41,7 +41,8 @@ DEFAULT_URLS = [
 ]
 
 # Use the biggest Groq model that is super cheap and never rate-limits
-llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0)
+# NEW — unlimited requests, no rate limits ever
+llm = ChatGroq(model="mixtral-8x22b-32768", temperature=0)
 
 @st.cache_resource
 def get_retriever(urls):
