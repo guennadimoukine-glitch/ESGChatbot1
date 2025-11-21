@@ -13,9 +13,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-st.set_page_config(page_title="Customer Support RAG Bot", layout="centered")
-st.title("AI Customer Support Chatbot")
-st.caption("Super reliable + long, detailed answers · Nov 2025")
+st.set_page_config(page_title="AI ESG Bot", layout="centered")
+st.title("AI ESG Bot")
+st.caption("Get data from ESG reports")
 
 # ============================
 # HARD-CODED URLS (edit here)
@@ -36,6 +36,7 @@ DEFAULT_URLS = [
     "https://www.broadcom.com/company/corporate-responsibility",
     "https://www.dell.com/en-us/lp/dt/reports-and-resources",
     "https://www.ibm.com/impact",
+    "https://www.acronis.com/en/sustainability-governance/",
     # Add as many as you want → they will always be indexed automatically
 ]
 
