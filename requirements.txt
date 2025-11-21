@@ -1,0 +1,9 @@
+streamlit
+langchain
+langchain-community
+langchain-groq
+chromadb
+pypdf
+python-dotenv
+unstructured[all-docs]
+playwright
