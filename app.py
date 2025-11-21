@@ -69,7 +69,7 @@ def get_retriever(urls_to_crawl):
 
     splits = RecursiveCharacterTextSplitter(chunk_size=1200, chunk_overlap=200).split_documents(docs)
     vectorstore = Chroma.from_documents(splits, HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2"))
-    return vectorstore.as_retriever(search_kwargs={"k": 6})
+    return vectorstore.as_retriever(search_kwargs={"k": 9999})  # basically everything
 
 # Sidebar
 with st.sidebar:
@@ -118,9 +118,10 @@ def format_docs(docs):
         for doc in docs
     )
 
-system_prompt = """You are an expert customer support agent.
-Use ONLY the following context to answer the question. 
-If the answer is not in the context, say "I don't have that information in my knowledge base."
+system_prompt = """You are a student researching systainabilty activities of different organizations.
+Answer the question using the provided context. 
+If the answer appears anywhere in the context (even partially or indirectly), use it.
+Only say "I don't have that information" if it is truly not present at all in the context.
 
 Context:
 {context}
