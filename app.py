@@ -40,8 +40,6 @@ DEFAULT_URLS = [
     # Add as many as you want → they will always be indexed automatically
 ]
 
-from langchain_xai import ChatXAI   # pip install langchain-xai
-
 llm = ChatXAI(model="grok-beta", temperature=0)
 
 @st.cache_resource
