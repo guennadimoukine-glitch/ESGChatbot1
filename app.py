@@ -40,7 +40,7 @@ DEFAULT_URLS = [
     # Add as many as you want → they will always be indexed automatically
 ]
 
-
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 llm = ChatGoogleGenerativeAI(
     model="gemini-1.5-flash",
