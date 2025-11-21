@@ -19,8 +19,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-st.set_page_config(page_title="Customer Support RAG Bot", layout="centered")
-st.title("🤖 AI Customer Support Chatbot (RAG + Memory + Website Crawling)")
+st.set_page_config(page_title="ESG Report Research bot", layout="centered")
+st.title("🤖 AI ESG Report Research Chatbot")
 
 # Choose your LLM (Grok is free & fast)
 llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0)
@@ -66,7 +66,7 @@ def load_and_index(_urls):
 
 # Sidebar
 with st.sidebar:
-    st.header("Knowledge Base")
+    st.header("Data Source")
     url_input = st.text_input("Add URLs (one per line)", placeholder="https://yourcompany.com/help")
     urls = [u.strip() for u in url_input.split("\n") if u.strip()]
 
