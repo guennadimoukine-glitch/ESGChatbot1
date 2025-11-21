@@ -13,21 +13,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-st.set_page_config(page_title="Customer Support RAG Bot", layout="centered")
-st.title("🤖 AI Customer Support Chatbot")
-st.caption("RAG + Memory + Hard-coded URLs — now 100% reliable")
+st.set_page_config(page_title="ESG AI Bot", layout="centered")
+st.title("ESG AI Bot Chatbot")
+st.caption("Search ESG reports")
 
 # ============================
 # HARD-CODED URLS (edit here)
 # ============================
 
 DEFAULT_URLS = [
-    "https://www.acronis.com/en-us/sustainability-governance/",
     "https://www.crowdstrike.com/about/environmental-social-governance/",
     "https://www.paloaltonetworks.com/about-us/corporate-responsibility",
     "https://www.fortinet.com/corporate/about-us/corporate-social-responsibility/sustainability-report",
     "https://www.veeam.com/company/corporate-governance.html",
-    "https://www.commvault.com/corporate-sustainability",
+    "https://www.commvault.com/document/commvault-fy25-sustainability-report",
     "https://www.cohesity.com/company/sustainability/",
     "https://www.zscaler.com/corporate-responsibility",
     "https://www.cyberark.com/company/esg/",
