@@ -43,7 +43,7 @@ DEFAULT_URLS = [
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-flash-001",
+    model="gemini-1.5-flash-latest",
     temperature=0,
     google_api_key=st.secrets["GEMINI_API_KEY"]
 )
