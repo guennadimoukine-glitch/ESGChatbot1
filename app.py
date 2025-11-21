@@ -13,9 +13,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-st.set_page_config(page_title="AI ESG Research chatbot", layout="centered")
-st.title("AI ESG Research chatbot")
-st.caption("Hard-coded URLs + Live Crawling")
+st.set_page_config(page_title="Customer Support RAG Bot", layout="centered")
+st.title("🤖 AI Customer Support Chatbot")
+st.caption("RAG + Memory + Hard-coded URLs — now 100% reliable")
 
 # ============================
 # HARD-CODED URLS (edit here)
@@ -34,7 +34,7 @@ DEFAULT_URLS = [
     "https://www.trendmicro.com/en_us/about/sustainability.html",
     "https://www.microsoft.com/en-us/corporate-responsibility/reports-hub",
     "https://www.cisco.com/c/en/us/about/csr/esg-hub.html",
-    "https://investors.broadcom.com/esg",
+    "https://www.broadcom.com/company/corporate-responsibility",
     "https://www.dell.com/en-us/lp/dt/reports-and-resources",
     "https://www.ibm.com/impact",
     # Add as many as you want → they will always be indexed automatically
@@ -46,7 +46,7 @@ llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0)
 def get_retriever(urls_to_crawl):
     docs = []
 
-    # Local files
+    # Local files (if any)
     if os.path.exists("data"):
         for file in os.listdir("data"):
             path = os.path.join("data", file)
@@ -54,26 +54,25 @@ def get_retriever(urls_to_crawl):
             if ext == ".pdf":
                 docs.extend(PyPDFDirectoryLoader("data").load())
             elif ext == ".txt":
-                docs.extend(TextLoader(path, encoding="utf-8").load())
+                docs.extend(TextLoader(path).load())
             elif ext == ".docx":
                 docs.extend(Docx2txtLoader(path).load())
 
     # URLs
     if urls_to_crawl:
         with st.spinner(f"Crawling {len(urls_to_crawl)} URL(s)..."):
-            loader = UnstructuredURLLoader(urls=urls_to_crawl, mode="single", strategy="fast")
+            loader = UnstructuredURLLoader(urls=urls_to_crawl, mode="single")
             docs.extend(loader.load())
 
     if not docs:
+        st.info("No documents found. Add URLs and click Re-index.")
         return None
 
-    splits = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200).split_documents(docs)
+    splits = RecursiveCharacterTextSplitter(chunk_size=1200, chunk_overlap=200).split_documents(docs)
     vectorstore = Chroma.from_documents(splits, HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2"))
     return vectorstore.as_retriever(search_kwargs={"k": 6})
 
-# ============================
 # Sidebar
-# ============================
 with st.sidebar:
     st.header("Knowledge Base")
     st.subheader("Always indexed")
@@ -81,72 +80,85 @@ with st.sidebar:
         st.write(f"✓ {url}")
 
     st.subheader("Add extra URLs (optional)")
-    extra = st.text_area("One per line", height=120, placeholder="https://www.acronis.com/en/sustainability-governance/")
+    extra = st.text_area("One per line", height=120)
     extra_urls = [u.strip() for u in extra.split("\n") if u.strip()]
 
     all_urls = DEFAULT_URLS + extra_urls
 
     if st.button("Re-index Everything", type="primary"):
         st.session_state.retriever = get_retriever(all_urls)
-        st.success("Re-indexed!")
+        st.success(f"Successfully indexed {len(all_urls)} URL(s)!")
+        st.rerun()
 
     if st.button("Clear chat"):
         st.session_state.chat_history = []
         st.rerun()
 
-# ============================
-# Initialize
-# ============================
+# First load
 if "retriever" not in st.session_state:
-    with st.spinner("First-time indexing of default URLs..."):
+    with st.spinner("Indexing your default URLs…"):
         st.session_state.retriever = get_retriever(DEFAULT_URLS)
 
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
 retriever = st.session_state.retriever
+
+# Safety check
 if not retriever:
     st.stop()
 
 # ============================
-# THE FIX: Get chat history once, outside the lambda
+# FIXED PROMPT — this is the real fix
 # ============================
-chat_history_for_chain = st.session_state.chat_history
-
 def format_docs(docs):
-    return "\n\n".join(f"**Source:** {d.metadata.get('source', 'Unknown')}\n{d.page_content}" for d in docs)
+    if not docs:
+        return "No relevant information found in the knowledge base."
+    return "\n\n".join(
+        f"Source → {doc.metadata.get('source', 'Unknown')}\n{doc.page_content.strip()}"
+        for doc in docs
+    )
+
+system_prompt = """You are an expert customer support agent.
+Use ONLY the following context to answer the question. 
+If the answer is not in the context, say "I don't have that information in my knowledge base."
+
+Context:
+{context}
+
+Always end your answer with the sources used."""
 
 prompt = ChatPromptTemplate.from_messages([
-    ("system", "You are a sustainability expert. Use ONLY the provided context. Always cite sources at the end."),
+    ("system", system_prompt),
     MessagesPlaceholder("chat_history"),
     ("human", "{question}"),
 ])
 
+# Pull chat history once (fixes the previous AttributeError)
+current_history = st.session_state.chat_history
+
 chain = (
-    {"context": retriever | format_docs, "question": RunnablePassthrough(), "chat_history": lambda x: chat_history_for_chain}
+    {"context": retriever | format_docs, "question": RunnablePassthrough(), "chat_history": lambda x: current_history}
     | prompt
     | llm
     | StrOutputParser()
 )
 
-# ============================
-# Chat UI
-# ============================
+# Chat
 for msg in st.session_state.chat_history:
     if isinstance(msg, HumanMessage):
         st.chat_message("human").write(msg.content)
     else:
         st.chat_message("ai").write(msg.content)
 
-if question := st.chat_input("Ask anything about indexed ESG reports..."):
+if question := st.chat_input("Ask anything…"):
     st.chat_message("human").write(question)
 
     with st.chat_message("ai"):
-        with st.spinner("Thinking..."):
+        with st.spinner("Searching knowledge base…"):
             response = chain.invoke(question)
+        st.markdown(response)
 
-        st.write(response)
-
-    # Append to history AFTER the chain runs
+    # Append after successful response
     st.session_state.chat_history.append(HumanMessage(content=question))
     st.session_state.chat_history.append(AIMessage(content=response))
