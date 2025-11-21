@@ -69,7 +69,7 @@ def get_retriever(urls_to_crawl):
 
     splits = RecursiveCharacterTextSplitter(chunk_size=1200, chunk_overlap=200).split_documents(docs)
     vectorstore = Chroma.from_documents(splits, HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2"))
-    return vectorstore.as_retriever(search_kwargs={"k": 9999})  # basically everything
+    return vectorstore.as_retriever(search_kwargs={"k": 200})  # basically everything
 
 # Sidebar
 with st.sidebar:
