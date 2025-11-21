@@ -7,3 +7,4 @@ pypdf
 python-dotenv
 unstructured[all-docs]
 sentence-transformers
+langchain-google-genai
