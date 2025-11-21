@@ -1,4 +1,4 @@
-# AI Customer Support Chatbot (RAG + Website Crawling)
+# AI Chatbot to query ESG reports
 
 A project to explore ESG reports
 
