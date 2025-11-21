@@ -40,9 +40,9 @@ DEFAULT_URLS = [
     # Add as many as you want → they will always be indexed automatically
 ]
 
-# Use the biggest Groq model that is super cheap and never rate-limits
-# NEW — unlimited requests, no rate limits ever
-llm = ChatGroq(model="mixtral-8x22b-32768", temperature=0)
+from langchain_xai import ChatXAI   # pip install langchain-xai
+
+llm = ChatXAI(model="grok-beta", temperature=0)
 
 @st.cache_resource
 def get_retriever(urls):
