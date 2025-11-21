@@ -40,7 +40,7 @@ DEFAULT_URLS = [
     # Add as many as you want → they will always be indexed automatically
 ]
 
-llm = ChatXAI(model="grok-beta", temperature=0)
+llm = ChatGroq(model="mixtral-8x22b-32768", temperature=0)
 
 @st.cache_resource
 def get_retriever(urls):
