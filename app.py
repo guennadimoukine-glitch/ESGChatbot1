@@ -13,13 +13,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-st.set_page_config(page_title="Customer Support RAG Bot", layout="centered")
-st.title("🤖 AI Customer Support Chatbot")
-st.caption("RAG + Memory + Hard-coded URLs + Live Website Crawling")
+st.set_page_config(page_title="AI ESG Research chatbot", layout="centered")
+st.title("AI ESG Research chatbot")
+st.caption("Hard-coded URLs + Live Crawling")
 
 # ============================
-# ⚙️ HARD-CODED URLs HERE (edit this list!)
+# HARD-CODED URLS (edit here)
 # ============================
+
 DEFAULT_URLS = [
     "https://www.acronis.com/en-us/sustainability-governance/",
     "https://www.crowdstrike.com/about/environmental-social-governance/",
@@ -39,15 +40,13 @@ DEFAULT_URLS = [
     # Add as many as you want → they will always be indexed automatically
 ]
 
-# LLM (free & blazing fast)
 llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0)
-# llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 @st.cache_resource
 def get_retriever(urls_to_crawl):
     docs = []
 
-    # 1. Local files (optional)
+    # Local files
     if os.path.exists("data"):
         for file in os.listdir("data"):
             path = os.path.join("data", file)
@@ -59,7 +58,7 @@ def get_retriever(urls_to_crawl):
             elif ext == ".docx":
                 docs.extend(Docx2txtLoader(path).load())
 
-    # 2. Crawl URLs (hard-coded + user-added)
+    # URLs
     if urls_to_crawl:
         with st.spinner(f"Crawling {len(urls_to_crawl)} URL(s)..."):
             loader = UnstructuredURLLoader(urls=urls_to_crawl, mode="single", strategy="fast")
@@ -73,83 +72,81 @@ def get_retriever(urls_to_crawl):
     return vectorstore.as_retriever(search_kwargs={"k": 6})
 
 # ============================
-# Sidebar – Extra URLs
+# Sidebar
 # ============================
 with st.sidebar:
-    st.header("Extra data sources")
-
-    # Show hard-coded ones
-    st.subheader("Always indexed (hard-coded)")
+    st.header("Knowledge Base")
+    st.subheader("Always indexed")
     for url in DEFAULT_URLS:
         st.write(f"✓ {url}")
 
-    # Let user add more
-    st.subheader("Add extra URLs")
-    extra_input = st.text_area(
-        "One URL per line (optional)",
-        placeholder="https://www.acronis.com/en/sustainability-governance/",
-        height=120
-    )
-    extra_urls = [u.strip() for u in extra_input.split("\n") if u.strip()]
+    st.subheader("Add extra URLs (optional)")
+    extra = st.text_area("One per line", height=120, placeholder="https://www.acronis.com/en/sustainability-governance/")
+    extra_urls = [u.strip() for u in extra.split("\n") if u.strip()]
 
     all_urls = DEFAULT_URLS + extra_urls
 
     if st.button("Re-index Everything", type="primary"):
-        with st.spinner("Indexing all URLs + files..."):
-            st.session_state.retriever = get_retriever(all_urls)
-        st.success(f"Indexed {len(all_urls)} URL(s) + local files!")
+        st.session_state.retriever = get_retriever(all_urls)
+        st.success("Re-indexed!")
 
-    if st.button("Clear chat history"):
+    if st.button("Clear chat"):
         st.session_state.chat_history = []
         st.rerun()
 
 # ============================
-# Initialize retriever (with hard-coded URLs from first load)
+# Initialize
 # ============================
 if "retriever" not in st.session_state:
-    with st.spinner("First-time indexing of hard-coded URLs..."):
+    with st.spinner("First-time indexing of default URLs..."):
         st.session_state.retriever = get_retriever(DEFAULT_URLS)
+
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
 retriever = st.session_state.retriever
 if not retriever:
     st.stop()
 
 # ============================
-# Chat Interface
+# THE FIX: Get chat history once, outside the lambda
 # ============================
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
+chat_history_for_chain = st.session_state.chat_history
 
 def format_docs(docs):
     return "\n\n".join(f"**Source:** {d.metadata.get('source', 'Unknown')}\n{d.page_content}" for d in docs)
 
 prompt = ChatPromptTemplate.from_messages([
-    ("system", "You are an expert customer sustinability agent. Use ONLY the provided context. Always cite sources at the end of your answer."),
+    ("system", "You are a sustainability expert. Use ONLY the provided context. Always cite sources at the end."),
     MessagesPlaceholder("chat_history"),
     ("human", "{question}"),
 ])
 
 chain = (
-    {"context": retriever | format_docs, "question": RunnablePassthrough(), "chat_history": lambda x: st.session_state.chat_history}
+    {"context": retriever | format_docs, "question": RunnablePassthrough(), "chat_history": lambda x: chat_history_for_chain}
     | prompt
     | llm
     | StrOutputParser()
 )
 
-# Display chat
+# ============================
+# Chat UI
+# ============================
 for msg in st.session_state.chat_history:
     if isinstance(msg, HumanMessage):
         st.chat_message("human").write(msg.content)
     else:
         st.chat_message("ai").write(msg.content)
 
-# Input box – now 100% guaranteed to appear
-if question := st.chat_input("Ask anything about cybesecurity peers ESG reports..."):
+if question := st.chat_input("Ask anything about indexed ESG reports..."):
     st.chat_message("human").write(question)
+
     with st.chat_message("ai"):
         with st.spinner("Thinking..."):
             response = chain.invoke(question)
+
         st.write(response)
 
+    # Append to history AFTER the chain runs
     st.session_state.chat_history.append(HumanMessage(content=question))
     st.session_state.chat_history.append(AIMessage(content=response))
